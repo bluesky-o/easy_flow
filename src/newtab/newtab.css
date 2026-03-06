@@ -1,1 +1,15 @@
-/*  */
+body {
+    height: 100%;
+    background: #000;
+    color: #fff;
+}
+
+.btn-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    .btn-click {
+        height: 20px;
+    }
+}
