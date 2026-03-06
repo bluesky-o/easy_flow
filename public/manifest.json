@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Easy flow",
+  "description": "easy flow",
+  "version": "1.0.0",
+
+  "permissions": ["storage"],
+
+  "host_permissions": [
+    "http://localhost:5173/*"
+  ],
+
+  "chrome_url_overrides": {
+    "newtab": "src/newtab/newtab.html"
+  }
+}
