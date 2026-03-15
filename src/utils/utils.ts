@@ -41,15 +41,3 @@ export function truncate(str: string | null | undefined, maxLength = 60): string
   if (!str || typeof str !== 'string') return '';
   return str.length > maxLength ? `${str.slice(0, maxLength)}…` : str;
 }
-
-/**
- * Normalises a group name: trims whitespace, lowercases, replaces spaces with hyphens.
- * Returns empty string if input is nullish.
- *
- * @param {string | null | undefined} group - Raw group input
- * @returns {string} Normalised group identifier e.g. "my work" → "my-work"
- */
-export function normaliseGroup(group: string | null | undefined): string {
-  if (!group || typeof group !== 'string') return '';
-  return group.trim().toLowerCase().replace(/\s+/g, '-');
-}

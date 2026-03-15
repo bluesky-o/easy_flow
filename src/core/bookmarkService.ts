@@ -1,6 +1,7 @@
 import { getBookmarks, saveBookmarks } from '../storage/storageAdapter';
 import type { Bookmark } from '../storage/storageAdapter';
-import { isValidUrl, normaliseGroup } from '../utils/utils';
+import { isValidUrl } from '../utils/utils';
+import { saveCollection } from '../services/collections';
 
 export type { Bookmark };
 
@@ -29,7 +30,7 @@ export function createBookmark(
     id: crypto.randomUUID(),
     title: title?.trim() || url,
     url: url.trim(),
-    groupId: normaliseGroup(groupId),
+    groupId: groupId?.trim() ?? '',
     tags: tags ?? [],
     createdAt: new Date().toISOString(),
   };
@@ -47,6 +48,11 @@ export async function addBookmark(bookmark: Bookmark): Promise<boolean> {
   const existing = await getBookmarks();
   const isDuplicate = existing.some((b) => b.url === bookmark.url);
   if (isDuplicate) return false;
+
+  if (bookmark.groupId) {
+    await saveCollection(bookmark.groupId);
+  }
+
   await saveBookmarks([...existing, bookmark]);
   return true;
 }
