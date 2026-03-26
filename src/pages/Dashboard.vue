@@ -19,14 +19,31 @@
     </div>
 
     <!-- Toolbar: search + new collection -->
-    <div class="flex flex-col sm:flex-row gap-3 mb-5">
+    <div class="flex flex-col sm:flex-row gap-3 mb-5 relative">
       <!-- Search -->
       <input
         ref="searchInput"
+        @keydown.enter="openBestMatch"
+        @blur="handleBlur"
         v-model="searchQuery"
         placeholder="Search by title or URL…"
         class="flex-1 bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none px-3 py-2 rounded text-sm text-gray-200 placeholder-gray-500"
       />
+      <div
+          v-if="searchQuery && filteredBookmarks.length"
+          class="absolute bg-gray-900 border border-gray-700 rounded shadow-lg z-50 mt-11 w-1/2"
+        >
+          <ul class="max-h-64 overflow-y-auto p-3 gap-3 space-y-1">
+            <li
+              v-for="bookmark in filteredBookmarks.slice(0, 6)"
+              :key="bookmark.id"
+              class="hover:bg-gray-800 cursor-pointer text-sm text-sm font-medium"
+              @click="openBookmark(bookmark)"
+            >
+              {{ bookmark.title }}
+            </li>
+          </ul>
+        </div>
       <!-- New collection -->
       <div class="flex gap-2">
         <input
@@ -85,7 +102,7 @@
         class="flex flex-col gap-2"
       >
         <!-- Collection header -->
-        <div class="flex items-center justify-between bg-slate-600 px-2 py-1 rounded-sm">
+        <div class="flex items-center justify-between bg-gray-800 px-2 py-1 rounded-sm">
           <h3 class="font-semibold text-gray-100 text-sm tracking-wide">
             {{ collection }}
           </h3>
@@ -189,11 +206,26 @@ function handleKeydown(e: KeyboardEvent) {
     case "c":
       isCompact.value = !isCompact.value
       break
-    case "/":
+    case "p":
       e.preventDefault()
       searchInput.value?.focus()
       break
   }
+}
+
+function handleBlur() {
+  searchQuery.value = ''
+}
+
+function openBookmark(bookmark: Bookmark) {
+  window.open(bookmark.url, "_blank")
+}
+
+function openBestMatch() {
+  if (!filteredBookmarks.value.length) return
+
+  const bestMatch = filteredBookmarks.value[0]
+  window.open(bestMatch.url, "_blank")
 }
 
 /** All unique tags across every bookmark */
