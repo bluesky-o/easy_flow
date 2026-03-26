@@ -1,5 +1,57 @@
 <template>
   <div class="min-h-screen bg-gray-950 text-gray-200 p-6 font-sans">
+    <!-- 🔥 Overlay -->
+    <div
+      v-if="isSettingsOpen"
+      @click="isSettingsOpen = false"
+      class="fixed inset-0 bg-black/50 z-40"
+    ></div>
+
+    <!-- 🔥 Side Panel -->
+    <div
+      class="fixed top-0 right-0 h-full w-[280px] bg-gray-900 border-l border-gray-800 z-50 transform transition-transform duration-300"
+      :class="isSettingsOpen ? 'translate-x-0' : 'translate-x-full'"
+    >
+      <div class="p-4 flex flex-col gap-6 h-full">
+        <h2 class="text-lg font-semibold text-white">Settings</h2>
+
+        <!-- 🔥 Compact Toggle Row -->
+        <div class="flex items-center justify-between">
+          <span class="text-sm text-gray-300">Compact mode</span>
+
+          <button
+            @click="isCompact = !isCompact"
+            class="relative w-10 h-6 rounded-full transition-colors"
+            :class="isCompact ? 'bg-gray-700' : 'bg-rose-500'"
+          >
+            <span
+              class="absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform"
+              :class="isCompact ? 'translate-x-0' : 'translate-x-4'"
+            ></span>
+          </button>
+        </div>
+
+        <ul class="mt-auto border border-gray-500 p-2 rounded-sm">
+          <li class="text-sm text-gray-600 flex justify-between font-bold pb-1 border-bottom border-gray-500">
+            <span>Key</span>
+            <span>Description</span>
+          </li>
+          <li class="text-sm text-gray-600 flex justify-between">
+            <span class="font-medium text-gray-400">'p'</span>
+            <span>Focus search bar</span>
+          </li>
+          <li class="text-sm text-gray-600 flex justify-between">
+            <span class="font-medium text-gray-400">'c'</span>
+            <span>Toggle compact mode</span>
+          </li>
+          <li class="text-sm text-gray-600 flex justify-between">
+            <span class="font-medium text-gray-400">'/'</span>
+            <span>Open Settings</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-3">
@@ -8,6 +60,15 @@
           {{ bookmarks.length }} saved
         </span>
       </div>
+
+      <button
+        @click="isSettingsOpen = true"
+        class="flex flex-col gap-[3px] p-2 hover:bg-gray-800 rounded"
+      >
+        <span class="w-5 h-[2px] bg-gray-300"></span>
+        <span class="w-5 h-[2px] bg-gray-300"></span>
+        <span class="w-5 h-[2px] bg-gray-300"></span>
+      </button>
     </div>
 
     <!-- Error banner -->
@@ -58,10 +119,6 @@
         >
           + Add
         </button>
-        <button @click="isCompact = !isCompact" class="bg-rose-400 hover:bg-rose-500 px-3 font-medium text-sm rounded-sm">
-          Compact
-        </button>
-
       </div>
     </div>
 
@@ -196,19 +253,23 @@ const errorMsg = ref('')
 const isLoading = ref(true)
 const isCompact = ref(false)
 const searchInput = ref<HTMLInputElement | null>(null)
+const isSettingsOpen = ref(false)
 
 function handleKeydown(e: KeyboardEvent) {
   // Ignore typing inside inputs/textareas
   const tag = (e.target as HTMLElement).tagName
   if (tag === "INPUT" || tag === "TEXTAREA") return
 
+  e.preventDefault()
   switch (e.key.toLowerCase()) {
     case "c":
       isCompact.value = !isCompact.value
       break
     case "p":
-      e.preventDefault()
       searchInput.value?.focus()
+      break
+    case "/":
+      isSettingsOpen.value = !isSettingsOpen.value
       break
   }
 }
@@ -310,7 +371,6 @@ async function loadAll(): Promise<void> {
     isLoading.value = false
   }
   window.addEventListener("keydown", handleKeydown)
-  searchInput.value?.focus()
 }
 
 onMounted(loadAll)
