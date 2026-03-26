@@ -1,6 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-900 text-gray-200 p-6 font-sans">
-
+  <div class="min-h-screen bg-gray-950 text-gray-200 p-6 font-sans">
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div class="flex items-center gap-3">
@@ -23,6 +22,7 @@
     <div class="flex flex-col sm:flex-row gap-3 mb-5">
       <!-- Search -->
       <input
+        ref="searchInput"
         v-model="searchQuery"
         placeholder="Search by title or URL…"
         class="flex-1 bg-gray-800 border border-gray-700 focus:border-blue-500 focus:outline-none px-3 py-2 rounded text-sm text-gray-200 placeholder-gray-500"
@@ -41,6 +41,10 @@
         >
           + Add
         </button>
+        <button @click="isCompact = !isCompact" class="bg-rose-400 hover:bg-rose-500 px-3 font-medium text-sm rounded-sm">
+          Compact
+        </button>
+
       </div>
     </div>
 
@@ -74,14 +78,14 @@
     </div>
 
     <!-- Collections grid -->
-    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       <div
         v-for="(items, collection) in groupedBookmarks"
         :key="collection"
-        class="bg-gray-800 border border-gray-700 rounded-xl p-4 flex flex-col gap-3"
+        class="flex flex-col gap-2"
       >
         <!-- Collection header -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between bg-slate-600 px-2 py-1 rounded-sm">
           <h3 class="font-semibold text-gray-100 text-sm tracking-wide">
             {{ collection }}
           </h3>
@@ -97,18 +101,15 @@
           </div>
         </div>
 
-        <!-- Divider -->
-        <div class="border-t border-gray-700" />
-
         <!-- Bookmark items -->
-        <ul v-if="items.length" class="space-y-1">
+        <ul v-if="items.length">
           <li
             v-for="bookmark in items"
             :key="bookmark.id"
-            class="group flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-700 transition-colors"
+            class="group flex items-center gap-2 rounded-sm px-2 py-1 hover:bg-gray-800 transition-colors"
           >
             <!-- Favicon -->
-            <img
+            <img v-if="isCompact"
               :src="faviconUrl(bookmark.url)"
               width="16"
               height="16"
@@ -116,18 +117,21 @@
               @error="($event.target as HTMLImageElement).style.display = 'none'"
             />
 
+            <div v-else class="bg-gray-50 p-0.5 rounded-full"></div>
+
             <!-- Title + meta -->
             <div class="flex-1 min-w-0">
               <a
                 :href="bookmark.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-sm text-blue-400 hover:text-blue-300 hover:underline truncate block"
+                class="text-sm text-white hover:text-blue-300 truncate block"
                 :title="bookmark.title"
               >
                 {{ bookmark.title }}
               </a>
-              <div class="flex items-center gap-2 mt-0.5">
+
+              <div v-if="isCompact" class="flex items-center gap-2 mt-0.5">
                 <span class="text-xs text-gray-600 truncate">{{ formatDate(bookmark.createdAt) }}</span>
                 <span
                   v-for="tag in (bookmark.tags ?? []).slice(0, 2)"
@@ -161,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { fetchBookmarks, removeBookmark } from '../core/bookmarkService'
 import { saveCollection, getCollections, removeCollection } from '../services/collections'
 import type { Bookmark } from '../storage/storageAdapter'
@@ -173,6 +177,24 @@ const activeTag = ref('')
 const newCollection = ref('')
 const errorMsg = ref('')
 const isLoading = ref(true)
+const isCompact = ref(false)
+const searchInput = ref<HTMLInputElement | null>(null)
+
+function handleKeydown(e: KeyboardEvent) {
+  // Ignore typing inside inputs/textareas
+  const tag = (e.target as HTMLElement).tagName
+  if (tag === "INPUT" || tag === "TEXTAREA") return
+
+  switch (e.key.toLowerCase()) {
+    case "c":
+      isCompact.value = !isCompact.value
+      break
+    case "/":
+      e.preventDefault()
+      searchInput.value?.focus()
+      break
+  }
+}
 
 /** All unique tags across every bookmark */
 const allTags = computed<string[]>(() => {
@@ -255,9 +277,15 @@ async function loadAll(): Promise<void> {
   } finally {
     isLoading.value = false
   }
+  window.addEventListener("keydown", handleKeydown)
+  searchInput.value?.focus()
 }
 
 onMounted(loadAll)
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeydown)
+})
 
 /**
  * Removes a bookmark by ID and refreshes the list.
