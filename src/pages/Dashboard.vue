@@ -196,15 +196,6 @@ function handleKeydown(e: KeyboardEvent) {
   }
 }
 
-onMounted(() => {
-  window.addEventListener("keydown", handleKeydown)
-  searchInput.value?.focus()
-})
-
-onUnmounted(() => {
-  window.removeEventListener("keydown", handleKeydown)
-})
-
 /** All unique tags across every bookmark */
 const allTags = computed<string[]>(() => {
   const set = new Set<string>()
@@ -286,9 +277,15 @@ async function loadAll(): Promise<void> {
   } finally {
     isLoading.value = false
   }
+  window.addEventListener("keydown", handleKeydown)
+  searchInput.value?.focus()
 }
 
 onMounted(loadAll)
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeydown)
+})
 
 /**
  * Removes a bookmark by ID and refreshes the list.
