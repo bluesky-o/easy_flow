@@ -2,36 +2,11 @@ import { getBookmarks, saveBookmarks } from '../storage/storageAdapter';
 import type { Bookmark } from '../storage/storageAdapter';
 import { isValidUrl } from '../utils/utils';
 import { saveCollection } from '../services/collections';
-import { storageGet, storageSet } from '../storage/browserAPI';
 
 export type { Bookmark };
 
-const BOOKMARK_ORDER_INITIALIZED_KEY = 'bookmarkOrderInitialized';
-
-async function ensureBookmarkOrderInitialized(): Promise<Bookmark[]> {
-  const [bookmarks, orderState] = await Promise.all([
-    getBookmarks(),
-    storageGet([BOOKMARK_ORDER_INITIALIZED_KEY]),
-  ]);
-
-  if (orderState[BOOKMARK_ORDER_INITIALIZED_KEY] === true) {
-    return bookmarks;
-  }
-
-  const sortedBookmarks = [...bookmarks].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  await Promise.all([
-    saveBookmarks(sortedBookmarks),
-    storageSet({ [BOOKMARK_ORDER_INITIALIZED_KEY]: true }),
-  ]);
-
-  return sortedBookmarks;
-}
-
 /**
- * Creates a new Bookmark object with a generated ID and timestamp.
+ * Creates a new Bookmark object with a numeric timestamp id.
  * Does NOT persist it - call {@link addBookmark} to save.
  *
  * @param {string} title   - Page title (falls back to URL if empty)
@@ -52,12 +27,11 @@ export function createBookmark(
   }
 
   return {
-    id: crypto.randomUUID(),
+    id: Date.now(),
     title: title?.trim() || url,
     url: url.trim(),
     groupId: groupId?.trim() ?? '',
     tags: tags ?? [],
-    createdAt: new Date().toISOString(),
   };
 }
 
@@ -70,7 +44,7 @@ export function createBookmark(
  * @returns {Promise<boolean>} `true` if saved, `false` if duplicate
  */
 export async function addBookmark(bookmark: Bookmark): Promise<boolean> {
-  const existing = await ensureBookmarkOrderInitialized();
+  const existing = await getBookmarks();
   const isDuplicate = existing.some((b) => b.url === bookmark.url);
   if (isDuplicate) return false;
 
@@ -86,12 +60,12 @@ export async function addBookmark(bookmark: Bookmark): Promise<boolean> {
  * Removes a bookmark by its ID.
  * Silently does nothing if the ID is not found.
  *
- * @param {string} id - UUID of the bookmark to remove
+ * @param {number} id - Numeric bookmark id
  * @returns {Promise<boolean>} `true` if removed, `false` if not found
  */
-export async function removeBookmark(id: string): Promise<boolean> {
+export async function removeBookmark(id: number): Promise<boolean> {
   if (!id) return false;
-  const existing = await ensureBookmarkOrderInitialized();
+  const existing = await getBookmarks();
   const filtered = existing.filter((b) => b.id !== id);
   if (filtered.length === existing.length) return false; // nothing removed
   await saveBookmarks(filtered);
@@ -105,10 +79,7 @@ export async function removeBookmark(id: string): Promise<boolean> {
  * @returns {Promise<void>}
  */
 export async function saveBookmarkOrder(bookmarks: Bookmark[]): Promise<void> {
-  await Promise.all([
-    saveBookmarks(bookmarks),
-    storageSet({ [BOOKMARK_ORDER_INITIALIZED_KEY]: true }),
-  ]);
+  await saveBookmarks(bookmarks);
 }
 
 /**
@@ -117,7 +88,7 @@ export async function saveBookmarkOrder(bookmarks: Bookmark[]): Promise<void> {
  * @returns {Promise<Bookmark[]>} All bookmarks in persisted display order
  */
 export async function fetchBookmarks(): Promise<Bookmark[]> {
-  return ensureBookmarkOrderInitialized();
+  return getBookmarks();
 }
 
 /**
@@ -129,6 +100,6 @@ export async function fetchBookmarks(): Promise<Bookmark[]> {
  */
 export async function findBookmarkByUrl(url: string): Promise<Bookmark | null> {
   if (!isValidUrl(url)) return null;
-  const existing = await ensureBookmarkOrderInitialized();
+  const existing = await getBookmarks();
   return existing.find((b) => b.url === url) ?? null;
 }

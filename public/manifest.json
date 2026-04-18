@@ -1,18 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "Easy_Flow",
-  "version": "0.1",
+  "name": "Easy Flow",
+  "version": "0.2",
   "description": "A bookmark manager that works across Chrome, Firefox, and Brave.",
 
   "permissions": [
     "tabs",
-    "storage",
-    "activeTab"
+    "storage"
   ],
-
-  // "host_permissions": [
-  //   "<all_urls>"
-  // ],
 
   "action": { 
     "default_popup": "popup.html",

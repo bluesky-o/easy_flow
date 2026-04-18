@@ -45,6 +45,18 @@
             <span class="ml-1 font-medium text-gray-400">'/'</span>
             <span>Open Settings</span>
           </li>
+          <li class="flex justify-between text-sm text-gray-600">
+            <span class="ml-1 font-medium text-gray-400">'r'</span>
+            <span>Reload page</span>
+          </li>
+          <li class="flex justify-between text-sm text-gray-600">
+            <span class="ml-1 font-medium text-gray-400">'m'</span>
+            <span>New collection</span>
+          </li>
+          <li class="flex justify-between text-sm text-gray-600">
+            <span class="ml-1 font-medium text-gray-400">'n'</span>
+            <span>New tab</span>
+          </li>
         </ul>
       </div>
     </div>

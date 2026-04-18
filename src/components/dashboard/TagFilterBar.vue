@@ -1,5 +1,5 @@
 <template>
-  <div v-if="tags.length" class="mb-6 flex flex-wrap gap-2">
+  <div v-if="tags.length" class="mb-3 flex flex-wrap gap-2">
     <button
       v-for="tag in tags"
       :key="tag"
