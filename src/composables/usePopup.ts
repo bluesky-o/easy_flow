@@ -38,7 +38,7 @@ export function usePopup() {
       getCollections(),
     ])
 
-    collections.value = collectionList
+    collections.value = collectionList.map((collection) => collection.name)
 
     if (!tab) return
 
