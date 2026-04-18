@@ -3,16 +3,41 @@ import { storageGet, storageSet } from '../storage/browserAPI'
 const COLLECTION_KEY = 'collections'
 const DEFAULT_COLLECTIONS: string[] = []
 
+function arraysEqual(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false
+  return left.every((value, index) => value === right[index])
+}
+
+async function mutateCollections(
+  mutator: (current: string[]) => string[]
+): Promise<void> {
+  const maxAttempts = 3
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const current = await getCollections()
+    const next = mutator(current)
+
+    await storageSet({ [COLLECTION_KEY]: next })
+
+    const stored = await getCollections()
+    if (arraysEqual(stored, next)) {
+      return
+    }
+  }
+
+  throw new Error('Failed to persist collections')
+}
+
 /**
  * Retrieves all saved collection names from storage.
- * Falls back to ["General"] if nothing is stored yet.
+ * Falls back to an empty list if nothing is stored yet.
  *
  * @returns {Promise<string[]>} Array of collection name strings
  */
 export async function getCollections(): Promise<string[]> {
   const result = await storageGet([COLLECTION_KEY])
   const data = result[COLLECTION_KEY]
-  return Array.isArray(data) && data.length > 0 ? (data as string[]) : DEFAULT_COLLECTIONS
+  return Array.isArray(data) ? (data as string[]) : DEFAULT_COLLECTIONS
 }
 
 /**
@@ -28,14 +53,29 @@ export async function saveCollection(name: string | null | undefined): Promise<b
   const trimmed = name.trim()
   if (!trimmed) return false
 
-  const collections = await getCollections()
-  const isDuplicate = collections.some(
-    (c) => c.toLowerCase() === trimmed.toLowerCase()
-  )
-  if (isDuplicate) return false
+  let added = false
 
-  await storageSet({ [COLLECTION_KEY]: [...collections, trimmed] })
-  return true
+  await mutateCollections((current) => {
+    const isDuplicate = current.some((collection) => collection.toLowerCase() === trimmed.toLowerCase())
+    if (isDuplicate) {
+      return current
+    }
+
+    added = true
+    return [...current, trimmed]
+  })
+
+  return added
+}
+
+/**
+ * Overwrites the saved collection order.
+ *
+ * @param {string[]} collections - Full ordered collection list
+ * @returns {Promise<void>}
+ */
+export async function setCollections(collections: string[]): Promise<void> {
+  await mutateCollections(() => [...collections])
 }
 
 /**
@@ -47,10 +87,13 @@ export async function saveCollection(name: string | null | undefined): Promise<b
 export async function removeCollection(name: string): Promise<boolean> {
   if (!name) return false
 
-  const collections = await getCollections()
-  const filtered = collections.filter((c) => c !== name)
-  if (filtered.length === collections.length) return false
+  let removed = false
 
-  await storageSet({ [COLLECTION_KEY]: filtered })
-  return true
+  await mutateCollections((current) => {
+    const filtered = current.filter((collection) => collection !== name)
+    removed = filtered.length !== current.length
+    return filtered
+  })
+
+  return removed
 }

@@ -10,11 +10,11 @@
     "activeTab"
   ],
 
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  // "host_permissions": [
+  //   "<all_urls>"
+  // ],
 
-  "action": {
+  "action": { 
     "default_popup": "popup.html",
     "default_title": "Easy Flow"
   },
